@@ -1,0 +1,104 @@
+---
+title: "hif_data"
+author: "Peter Higgins"
+date: "2024-12-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(ggsignif)
+library(ggbeeswarm)
+```
+
+## Read in Data
+
+```{r data}
+histo_data <- read_excel("HIF_Higgins data.xlsx", sheet = 1, range = 'A1:D9') |> pivot_longer(cols = everything(), names_to = 'rx', values_to = 'histo_score') |> separate(col = rx, sep = '\\+',into = c('mouse', 'drug'))
+
+col_length_data <- read_excel("HIF_Higgins data.xlsx", sheet = 2, range = 'A1:D9') |> pivot_longer(cols = everything(), names_to = 'rx', values_to = 'colon_length') |> separate(col = rx, sep = '\\+',into = c('mouse', 'drug'))
+```
+
+## Let's Start With Plots
+
+You can also grid plots, for example:
+
+Start with mouse effect
+
+
+```{r }
+histo_data |> 
+  ggplot(aes(y = histo_score, x = mouse, fill = drug)) +
+  geom_boxplot() +
+  ggbeeswarm::geom_quasirandom(dodge.width = 0.8) +
+  geom_signif(comparisons = list(c('OE', 'WT')),
+    y_position = 45,
+    test = t.test) +
+  scale_fill_manual(labels = c("Ruxolitinib", "Vehicle"),
+      values = c("green", "gray80")) +
+  theme(legend.position = "top") +
+  scale_y_continuous(limits = c(0, 50)) +
+  labs(fill = "Treatment",
+       title ="Effect of mouse type on Histology Score in response to DSS x 7 Days",
+subtitle = "Higher Score = More Severe Colitis")
+```
+
+
+```{r }
+col_length_data |> 
+  ggplot(aes(y = colon_length, x = mouse, fill = drug)) +
+  geom_boxplot() +
+  ggbeeswarm::geom_quasirandom(dodge.width = 0.8) +
+  geom_signif(comparisons = list(c('OE', 'WT')),
+    y_position = 7.8,
+    test = t.test) +
+  scale_fill_manual(labels = c("Ruxolitinib", "Vehicle"),
+      values = c("green", "gray80")) +
+  theme(legend.position = "top") +
+  scale_y_continuous(limits = c(0, 9)) +
+  labs(fill = "Treatment",
+       title ="Effect of mouse type on Colon Length in response to DSS x 7 Days")
+```
+
+
+
+
+### Now do drug effect by mouse
+
+```{r plot}
+histo_data |> 
+  ggplot(aes(y = histo_score, x = drug, fill = drug)) +
+  geom_boxplot() +
+  ggbeeswarm::geom_quasirandom(dodge.width = 0.8) +
+  facet_wrap(mouse ~ .) +
+  geom_signif(comparisons = list(c('Jaki', 'VEH')),
+    y_position = 45,
+    test = t.test) +
+  scale_fill_manual(labels = c("Ruxolitinib", "Vehicle"),
+      values = c("green", "gray80")) +
+  theme(legend.position = "top") +
+  scale_y_continuous(limits = c(0, 50)) +
+   labs(fill = "Treatment",
+       title ="Effect of Treatment on Histology Score",
+subtitle = "Higher Score = More Severe Colitis")
+```
+
+```{r}
+col_length_data |> 
+  ggplot(aes(y = colon_length, x = drug, fill = drug)) +
+  geom_boxplot() +
+  ggbeeswarm::geom_quasirandom(dodge.width = 0.8) +
+  facet_wrap(mouse ~ .) +
+  geom_signif(comparisons = list(c('Jaki', 'VEH')),
+    y_position = 7.8,
+    test = t.test) +
+  scale_fill_manual(labels = c("Ruxolitinib", "Vehicle"),
+      values = c("green", "gray80")) +
+  theme(legend.position = "top") +
+  scale_y_continuous(limits = c(0, 8.5)) +
+  labs(fill = "Treatment",
+       title ="Effect of Treatment on Colon Length")
+```
